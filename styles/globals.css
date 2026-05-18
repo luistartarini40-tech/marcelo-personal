@@ -124,3 +124,18 @@
   }
 }
 
+/* ======================================= */
+/* CÓDIGO PARA REMOVER O ÍCONE 'N' DO LAYOUT */
+/* ======================================= */
+#vercel-speed-insights-widget,
+.__next-root-layout-__next,
+[data-nextjs-toast-layout],
+.v0-feedback-widget,
+#v0-dev-badge,
+html > next-route-announcer + div,
+body > div[id^="vercel-"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

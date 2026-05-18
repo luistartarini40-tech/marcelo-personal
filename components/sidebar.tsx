@@ -44,7 +44,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-[210px] bg-white border-r border-gray-200 flex flex-col z-50 transition-transform duration-300",
+          "fixed top-0 left-0 h-full w-[230px] bg-white border-r border-gray-200 flex flex-col z-50 transition-transform duration-300 shadow-sm",
           "lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -52,16 +52,16 @@ export function Sidebar() {
         {/* Close button mobile */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 p-1 lg:hidden"
+          className="absolute top-4 right-4 p-2 rounded-lg bg-white shadow-md lg:hidden"
           aria-label="Fechar menu"
         >
-          <X className="h-5 w-5 text-gray-500" />
+          <X className="h-5 w-5 text-gray-600" />
         </button>
 
         {/* Logo and user info */}
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[#1E3A5F]">
+        <div className="px-6 py-8 border-b border-gray-100">
+          <div className="flex items-center gap-4">
+            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-slate-900 ring-1 ring-slate-200">
               <Image
                 src="/logo.jpg"
                 alt="Marcelo Personal Logo"
@@ -70,15 +70,15 @@ export function Sidebar() {
               />
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900 text-sm">Marcelo</h2>
-              <p className="text-xs text-gray-500">Personal Trainer</p>
+              <h2 className="font-semibold text-gray-900 text-base">Marcelo</h2>
+              <p className="text-sm text-slate-500">Personal Trainer</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3">
-          <ul className="space-y-1">
+        <nav className="flex-1 px-4 py-6">
+          <ul className="space-y-2">
             {menuItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
               const Icon = item.icon
@@ -88,10 +88,10 @@ export function Sidebar() {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition duration-200",
                       isActive
-                        ? "bg-[#2563EB] text-white"
-                        : "text-gray-600 hover:bg-gray-100"
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -104,10 +104,10 @@ export function Sidebar() {
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-gray-100">
+        <div className="px-4 py-5 border-t border-gray-100">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 w-full transition-colors"
+            className="flex items-center gap-3 w-full rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 transition duration-200"
           >
             <LogOut className="h-5 w-5" />
             Sair da conta

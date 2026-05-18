@@ -22,6 +22,25 @@ export interface Treino {
   criadoEm: string
 }
 
+export interface Exercicio {
+  id: string
+  nome: string
+  series?: string
+  reps?: string
+  carga?: string
+  descanso?: string
+  observacoes?: string
+}
+
+export interface Ficha {
+  id: string
+  treinoId: string
+  nome: string
+  diasDaSemana: string
+  exercicios: Exercicio[]
+  criadoEm: string
+}
+
 export interface Avaliacao {
   id: string
   alunoId: string

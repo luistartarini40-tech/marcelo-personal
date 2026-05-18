@@ -35,11 +35,11 @@ export default function NovoTreinoPage() {
     const aluno = alunos.find((a) => a.id === formData.alunoId)
     if (!aluno) return
 
-    addTreino({
+    const newId = addTreino({
       ...formData,
       alunoNome: aluno.nome,
     })
-    router.push("/treinos")
+    router.push(`/treinos/${newId}`)
   }
 
   return (
@@ -81,9 +81,14 @@ export default function NovoTreinoPage() {
               <Label htmlFor="aluno">Aluno *</Label>
               <Select
                 value={formData.alunoId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, alunoId: value })
-                }
+                onValueChange={(value) => {
+                  const aluno = alunos.find((a) => a.id === value)
+                  setFormData((prev) => ({
+                    ...prev,
+                    alunoId: value,
+                    objetivo: prev.objetivo || (aluno ? aluno.objetivo : ""),
+                  }))
+                }}
                 required
               >
                 <SelectTrigger className="bg-[#F1F5F9] border-[#E2E8F0]">
@@ -127,7 +132,7 @@ export default function NovoTreinoPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="objetivo">Objetivo do Programa</Label>
+              <Label htmlFor="objetivo">Objetivo do Programa (opcional)</Label>
               <Input
                 id="objetivo"
                 placeholder="Ex: Ganho de massa muscular"
@@ -137,6 +142,7 @@ export default function NovoTreinoPage() {
                 }
                 className="bg-[#F1F5F9] border-[#E2E8F0]"
               />
+              <p className="text-sm text-gray-400">Preenchido automaticamente com o objetivo do aluno, se disponível.</p>
             </div>
 
             <div className="space-y-2">

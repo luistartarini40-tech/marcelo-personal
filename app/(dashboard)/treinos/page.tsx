@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Search, Plus, Dumbbell, X } from "lucide-react"
+import { Search, Plus, Dumbbell, X, FileText, Edit } from "lucide-react"
 import { useData } from "@/lib/data-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 
 export default function TreinosPage() {
-  const { treinos, deleteTreino } = useData()
+  const { treinos, deleteTreino, updateTreino, fichas } = useData()
   const [searchTerm, setSearchTerm] = useState("")
 
   const filteredTreinos = treinos.filter(
@@ -19,7 +19,7 @@ export default function TreinosPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto flex max-w-6xl flex-col space-y-6 px-2 sm:px-4 lg:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -58,37 +58,26 @@ export default function TreinosPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTreinos.map((treino) => (
-            <Card key={treino.id} className="border-[#E5E7EB]">
+            <Link
+            key={treino.id}
+            href={`/treinos/${treino.id}`}
+            className="block group"
+          >
+            <Card className="border-[#E5E7EB] bg-white transition-transform duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-orange-50 rounded-lg">
-                    <Dumbbell className="h-5 w-5 text-orange-600" />
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#E6F0FF] flex items-center justify-center text-blue-600 font-semibold">{treino.alunoNome.charAt(0).toUpperCase()}</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600">{treino.nome}</h3>
+                      <p className="text-sm text-gray-500">{treino.alunoNome}</p>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteTreino(treino.id)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50 -mt-1 -mr-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs">Ativo</span>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-1">{treino.nome}</h3>
-                <p className="text-sm text-gray-500 mb-2">{treino.alunoNome}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span>
-                    {new Date(treino.dataInicio).toLocaleDateString("pt-BR")}
-                  </span>
-                  <span>-</span>
-                  <span>
-                    {new Date(treino.dataTermino).toLocaleDateString("pt-BR")}
-                  </span>
-                </div>
-                {treino.objetivo && (
-                  <p className="text-sm text-gray-500 mt-2">{treino.objetivo}</p>
-                )}
               </CardContent>
             </Card>
+          </Link>
           ))}
         </div>
       )}

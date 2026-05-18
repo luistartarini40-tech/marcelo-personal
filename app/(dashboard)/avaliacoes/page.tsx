@@ -17,7 +17,7 @@ export default function AvaliacoesPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto flex max-w-6xl flex-col space-y-6 px-2 sm:px-4 lg:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

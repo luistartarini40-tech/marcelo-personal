@@ -42,7 +42,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-gray-900">
             Bem-vindo ao Marcelo Personal
           </h1>
-          <p className="text-gray-500 mt-1">Entre para continuar</p>
+          <p className="text-gray-500 mt-1"></p>
         </div>
 
         {/* Google Button */}
