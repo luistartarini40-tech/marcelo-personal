@@ -49,7 +49,6 @@ export default function DashboardPage() {
     <div className="mx-auto flex max-w-6xl flex-col space-y-6 px-2 sm:px-4 lg:px-0">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Bem-vindo! 👋</h1>
         <p className="text-gray-500 mt-2">Aqui está o resumo dos seus alunos.</p>
       </div>
 

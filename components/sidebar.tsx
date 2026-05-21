@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, Users, Dumbbell, ClipboardList, LogOut, Menu, X } from "lucide-react"
 import { useState } from "react"
@@ -61,13 +60,8 @@ export function Sidebar() {
         {/* Logo and user info */}
         <div className="px-6 py-8 border-b border-gray-100">
           <div className="flex items-center gap-4">
-            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-slate-900 ring-1 ring-slate-200">
-              <Image
-                src="/logo.jpg"
-                alt="Marcelo Personal Logo"
-                fill
-                className="object-cover"
-              />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold uppercase text-white ring-1 ring-slate-200">
+              M
             </div>
             <div>
               <h2 className="font-semibold text-gray-900 text-base">Marcelo</h2>
