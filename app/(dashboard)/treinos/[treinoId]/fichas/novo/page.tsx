@@ -16,10 +16,22 @@ export default function NovaFichaPage() {
 
   const [form, setForm] = useState({ nome: "Ficha A", dias: "", exercicios: [{ id: 1, nome: "" }] })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    addFicha({ treinoId, nome: form.nome, diasDaSemana: form.dias, exercicios: form.exercicios.map((ex: any, i: number) => ({ id: String(i + 1), nome: ex.nome })) })
-    router.push(`/treinos/${treinoId}`)
+    try {
+      await addFicha({
+        treinoId,
+        nome: form.nome,
+        diasDaSemana: form.dias,
+        exercicios: form.exercicios.map((ex: { nome: string }, i: number) => ({
+          id: String(i + 1),
+          nome: ex.nome,
+        })),
+      })
+      router.push(`/treinos/${treinoId}`)
+    } catch {
+      alert("Não foi possível salvar a ficha. Tente novamente.")
+    }
   }
 
   return (

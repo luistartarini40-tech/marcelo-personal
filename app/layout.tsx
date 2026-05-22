@@ -5,12 +5,11 @@ import './globals.css'
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: 'Marcelo Personal | Gestão para Personal Trainers',
+  title: 'Evolução Fit | Gestão para Personal Trainers',
   description: 'Plataforma completa de gestão para personal trainers. Gerencie seus alunos, treinos e avaliações em um só lugar.',
-  generator: 'v0.app',
   icons: {
-    icon: '/logo.jpg',
-    apple: '/logo.jpg',
+    icon: '/icon.svg',
+    apple: '/icon.svg',
   },
 }
 

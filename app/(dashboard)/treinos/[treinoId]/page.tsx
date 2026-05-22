@@ -5,17 +5,23 @@ import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useData } from "@/lib/data-context"
-import { ArrowLeft, Plus, FileText, Edit, Trash } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
+import { ArrowLeft, Plus, FileText, Edit, Trash, Download } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
+import {
+  FichaExerciciosForm,
+  emptyExercicio,
+  type ExercicioFormItem,
+} from "@/components/ficha-exercicios-form"
+import { printFichaPdf, printProgramaPdf } from "@/lib/pdf"
 
 export default function TreinoDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { treinoId } = params as { treinoId: string }
-  const { treinos, fichas, addFicha, updateTreino, deleteTreino, updateFicha, deleteFicha, alunos } = useData()
+  const { treinos, fichas, addFicha, updateTreino, deleteTreino, updateFicha, deleteFicha, alunos, loading } = useData()
 
   const treino = treinos.find((t) => t.id === treinoId)
 
@@ -25,11 +31,19 @@ export default function TreinoDetailPage() {
   const [activeFichaId, setActiveFichaId] = useState<string | null>(null)
 
   // form state for nova ficha
-  const [fichaForm, setFichaForm] = useState({ nome: "", dias: "", exercicios: [{ id: Date.now(), nome: '', series: '', reps: '', carga: '', descanso: '' }] as any[] })
+  const [saving, setSaving] = useState(false)
+  const [fichaForm, setFichaForm] = useState({
+    nome: "",
+    dias: "",
+    exercicios: [emptyExercicio()] as ExercicioFormItem[],
+  })
 
-  // form state for edit ficha
-  const [editingFicha, setEditingFicha] = useState<any>(null)
-  const [editFichaForm, setEditFichaForm] = useState({ nome: "", dias: "", exercicios: [] as any[] })
+  const [editingFicha, setEditingFicha] = useState<{ id: string } | null>(null)
+  const [editFichaForm, setEditFichaForm] = useState({
+    nome: "",
+    dias: "",
+    exercicios: [] as ExercicioFormItem[],
+  })
 
   // form state for edit programa
   const [programForm, setProgramForm] = useState({
@@ -54,41 +68,26 @@ export default function TreinoDetailPage() {
     }
   }, [treino])
 
-  if (!treino) return <div>Treino não encontrado</div>
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-gray-500">
+        Carregando programa...
+      </div>
+    )
+  }
+
+  if (!treino) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
+        <p className="text-gray-600">Treino não encontrado</p>
+        <Link href="/treinos">
+          <Button variant="outline">Voltar para Treinos</Button>
+        </Link>
+      </div>
+    )
+  }
 
   const fichasDoTreino = fichas.filter((f) => f.treinoId === treino.id)
-
-  const handlePdf = () => {
-    const fichasHtml = fichasDoTreino
-      .map((f) => `
-        <h3>${f.nome}</h3>
-        <p>Dias: ${f.diasDaSemana || '-'} </p>
-        <ul>${f.exercicios.map((e) => `<li>${e.nome} ${e.series ? `| ${e.series}` : ''} ${e.reps ? `x${e.reps}` : ''} ${e.carga ? `@${e.carga}` : ''}</li>`).join('')}</ul>
-      `)
-      .join('<hr/>')
-
-    const content = `
-      <html>
-        <head>
-          <title>${treino.nome} - Programa</title>
-          <style>body{font-family:Inter,system-ui;padding:24px} h1{font-size:20px}</style>
-        </head>
-        <body>
-          <h1>${treino.nome}</h1>
-          <p>Aluno: ${treino.alunoNome}</p>
-          <p>Objetivo: ${treino.objetivo || '-'}</p>
-          <hr/>
-          ${fichasHtml || '<p>Nenhuma ficha</p>'}
-        </body>
-      </html>
-    `
-    const w = window.open('', '_blank')
-    if (!w) return
-    w.document.open()
-    w.document.write(content)
-    w.document.close()
-    setTimeout(() => w.print(), 300)
-  }
 
   return (
     <div className="mx-auto max-w-6xl px-2 sm:px-4 lg:px-0">
@@ -111,9 +110,9 @@ export default function TreinoDetailPage() {
               variant="outline"
               size="sm"
               className="transition transform hover:-translate-y-0.5 hover:shadow-lg"
-              onClick={() => handlePdf()}
+              onClick={() => printProgramaPdf(treino, fichasDoTreino)}
             >
-              <FileText className="h-4 w-4 mr-2" /> PDF
+              <FileText className="h-4 w-4 mr-2" /> PDF Programa
             </Button>
             <Button
               variant="ghost"
@@ -127,10 +126,14 @@ export default function TreinoDetailPage() {
               variant="ghost"
               size="sm"
               className="text-red-500 border border-red-100 hover:bg-red-50 transition-transform hover:-translate-y-0.5"
-              onClick={() => {
-                if (confirm('Excluir programa?')) {
-                  deleteTreino(treino.id)
-                  router.push('/treinos')
+              onClick={async () => {
+                if (confirm("Excluir programa?")) {
+                  try {
+                    await deleteTreino(treino.id)
+                    router.push("/treinos")
+                  } catch {
+                    alert("Não foi possível excluir.")
+                  }
                 }
               }}
             >
@@ -144,7 +147,22 @@ export default function TreinoDetailPage() {
             <DialogHeader>
               <DialogTitle>Editar Programa</DialogTitle>
             </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); const aluno = alunos.find(a => a.id === programForm.alunoId); updateTreino(treino.id, { ...programForm, alunoNome: aluno ? aluno.nome : treino.alunoNome }); setOpenEditPrograma(false); }} className="space-y-4">
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              const aluno = alunos.find((a) => a.id === programForm.alunoId)
+              setSaving(true)
+              try {
+                await updateTreino(treino.id, {
+                  ...programForm,
+                  alunoNome: aluno ? aluno.nome : treino.alunoNome,
+                })
+                setOpenEditPrograma(false)
+              } catch {
+                alert("Não foi possível salvar o programa.")
+              } finally {
+                setSaving(false)
+              }
+            }} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="progNome">Nome do Programa *</Label>
                 <Input id="progNome" required value={programForm.nome} onChange={(e) => setProgramForm((p) => ({ ...p, nome: e.target.value }))} />
@@ -179,7 +197,9 @@ export default function TreinoDetailPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpenEditPrograma(false)}>Cancelar</Button>
-                <Button type="submit" className="bg-[#2563EB] text-white">Salvar Programa</Button>
+                <Button type="submit" className="bg-[#2563EB] text-white" disabled={saving}>
+                  {saving ? "Salvando..." : "Salvar Programa"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -205,7 +225,24 @@ export default function TreinoDetailPage() {
           <DialogHeader>
             <DialogTitle>Nova Ficha de Treino</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); addFicha({ treinoId: treino.id, nome: fichaForm.nome, diasDaSemana: fichaForm.dias, exercicios: fichaForm.exercicios }); setOpenNovaFicha(false); setFichaForm({ nome: '', dias: '', exercicios: [] }); }} className="space-y-4">
+          <form onSubmit={async (e) => {
+            e.preventDefault()
+            setSaving(true)
+            try {
+              await addFicha({
+                treinoId: treino.id,
+                nome: fichaForm.nome,
+                diasDaSemana: fichaForm.dias,
+                exercicios: fichaForm.exercicios,
+              })
+              setOpenNovaFicha(false)
+              setFichaForm({ nome: "", dias: "", exercicios: [emptyExercicio()] })
+            } catch {
+              alert("Não foi possível salvar a ficha.")
+            } finally {
+              setSaving(false)
+            }
+          }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="nomeFicha">Nome da Ficha *</Label>
@@ -216,26 +253,15 @@ export default function TreinoDetailPage() {
                 <Input id="dias" value={fichaForm.dias} onChange={(e) => setFichaForm((p) => ({ ...p, dias: e.target.value }))} placeholder="Ex: Segunda e Quinta" />
               </div>
             </div>
-            <div className="rounded-3xl border border-gray-200 bg-[#F8FAFC] p-4">
-              <div className="flex items-center justify-between gap-4">
-                <Label>Exercícios</Label>
-                <Button type="button" variant="outline" className="h-10 px-4" onClick={() => setFichaForm((p) => ({ ...p, exercicios: [...p.exercicios, { id: Date.now(), nome: '', series: '', reps: '', carga: '', descanso: '' }] }))}>+ Adicionar</Button>
-              </div>
-              {fichaForm.exercicios.map((ex, idx) => (
-                <div key={ex.id} className="mt-3 grid grid-cols-[minmax(0,1fr)_5rem_5rem_5rem_5rem_auto] gap-2">
-                  <Input placeholder="Nome do exercício" value={ex.nome ?? ""} className="rounded-full" onChange={(e) => { const copy = [...fichaForm.exercicios]; copy[idx] = { ...copy[idx], nome: e.target.value }; setFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Séries" value={ex.series ?? ""} className="rounded-full" onChange={(e) => { const copy = [...fichaForm.exercicios]; copy[idx] = { ...copy[idx], series: e.target.value }; setFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Reps" value={ex.reps ?? ""} className="rounded-full" onChange={(e) => { const copy = [...fichaForm.exercicios]; copy[idx] = { ...copy[idx], reps: e.target.value }; setFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Carga" value={ex.carga ?? ""} className="rounded-full" onChange={(e) => { const copy = [...fichaForm.exercicios]; copy[idx] = { ...copy[idx], carga: e.target.value }; setFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Desc." value={ex.descanso ?? ""} className="rounded-full" onChange={(e) => { const copy = [...fichaForm.exercicios]; copy[idx] = { ...copy[idx], descanso: e.target.value }; setFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Button type="button" variant="ghost" className="text-red-500" onClick={() => { setFichaForm((p) => ({ ...p, exercicios: p.exercicios.filter((_, i) => i !== idx) })); }}>🗑️</Button>
-                </div>
-              ))}
-              <p className="text-sm text-gray-500 mt-3">Séries | Reps | Carga | Descanso</p>
-            </div>
+            <FichaExerciciosForm
+              exercicios={fichaForm.exercicios}
+              onChange={(exercicios) => setFichaForm((p) => ({ ...p, exercicios }))}
+            />
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenNovaFicha(false)}>Cancelar</Button>
-              <Button type="submit" className="bg-[#2563EB] text-white">Salvar Ficha</Button>
+              <Button type="submit" className="bg-[#2563EB] text-white" disabled={saving}>
+                {saving ? "Salvando..." : "Salvar Ficha"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -286,12 +312,27 @@ export default function TreinoDetailPage() {
                       variant="ghost"
                       size="sm"
                       className="text-slate-600 hover:bg-slate-100"
+                      onClick={() => printFichaPdf(f, treino)}
+                      title="Baixar PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-slate-600 hover:bg-slate-100"
                       onClick={() => {
                         setEditingFicha(f)
                         setEditFichaForm({
                           nome: f.nome,
                           dias: f.diasDaSemana || "",
-                          exercicios: f.exercicios.map((exercise) => ({ ...exercise })),
+                          exercicios:
+                            f.exercicios.length > 0
+                              ? f.exercicios.map((exercise) => ({
+                                  ...exercise,
+                                  id: exercise.id || crypto.randomUUID(),
+                                }))
+                              : [emptyExercicio()],
                         })
                         setOpenEditFicha(true)
                       }}
@@ -302,7 +343,15 @@ export default function TreinoDetailPage() {
                       variant="ghost"
                       size="sm"
                       className="text-red-500 hover:bg-red-50"
-                      onClick={() => { if (confirm('Excluir ficha?')) { deleteFicha(f.id) } }}
+                      onClick={async () => {
+                        if (confirm("Excluir ficha?")) {
+                          try {
+                            await deleteFicha(f.id)
+                          } catch {
+                            alert("Não foi possível excluir.")
+                          }
+                        }
+                      }}
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
@@ -319,11 +368,22 @@ export default function TreinoDetailPage() {
           <DialogHeader>
             <DialogTitle>Editar Ficha</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => {
+          <form onSubmit={async (e) => {
             e.preventDefault()
             if (!editingFicha) return
-            updateFicha(editingFicha.id, { nome: editFichaForm.nome, diasDaSemana: editFichaForm.dias, exercicios: editFichaForm.exercicios })
-            setOpenEditFicha(false)
+            setSaving(true)
+            try {
+              await updateFicha(editingFicha.id, {
+                nome: editFichaForm.nome,
+                diasDaSemana: editFichaForm.dias,
+                exercicios: editFichaForm.exercicios,
+              })
+              setOpenEditFicha(false)
+            } catch {
+              alert("Não foi possível salvar a ficha.")
+            } finally {
+              setSaving(false)
+            }
           }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -335,26 +395,17 @@ export default function TreinoDetailPage() {
                 <Input id="editDias" placeholder="Ex: Segunda e Quinta" value={editFichaForm.dias} onChange={(e) => setEditFichaForm((p) => ({ ...p, dias: e.target.value }))} />
               </div>
             </div>
-            <div>
-              <div className="flex justify-between items-center">
-                <Label>Exercícios</Label>
-                <Button type="button" variant="outline" onClick={() => setEditFichaForm((p) => ({ ...p, exercicios: [...p.exercicios, { id: Date.now(), nome: '', series: '', reps: '', carga: '', descanso: '' }] }))}>+ Adicionar</Button>
-              </div>
-              {editFichaForm.exercicios.map((ex, idx) => (
-                <div key={ex.id} className="mt-2 flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-[#F8FAFC] p-3">
-                  <Input placeholder="Nome do exercício" value={ex.nome ?? ""} className="flex-1 min-w-[160px]" onChange={(e) => { const copy = [...editFichaForm.exercicios]; copy[idx] = { ...copy[idx], nome: e.target.value }; setEditFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Séries" value={ex.series ?? ""} className="w-24" onChange={(e) => { const copy = [...editFichaForm.exercicios]; copy[idx] = { ...copy[idx], series: e.target.value }; setEditFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Reps" value={ex.reps ?? ""} className="w-20" onChange={(e) => { const copy = [...editFichaForm.exercicios]; copy[idx] = { ...copy[idx], reps: e.target.value }; setEditFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Carga" value={ex.carga ?? ""} className="w-20" onChange={(e) => { const copy = [...editFichaForm.exercicios]; copy[idx] = { ...copy[idx], carga: e.target.value }; setEditFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Input placeholder="Desc." value={ex.descanso ?? ""} className="w-20" onChange={(e) => { const copy = [...editFichaForm.exercicios]; copy[idx] = { ...copy[idx], descanso: e.target.value }; setEditFichaForm((p) => ({ ...p, exercicios: copy })); }} />
-                  <Button type="button" variant="ghost" className="text-red-500 transition-transform hover:-translate-y-0.5" onClick={() => { setEditFichaForm((p) => ({ ...p, exercicios: p.exercicios.filter((_, i) => i !== idx) })); }}>🗑️</Button>
-                </div>
-              ))}
-              <p className="text-sm text-gray-400 mt-2">Séries | Reps | Carga | Descanso</p>
-            </div>
+            <FichaExerciciosForm
+              exercicios={editFichaForm.exercicios}
+              onChange={(exercicios) =>
+                setEditFichaForm((p) => ({ ...p, exercicios }))
+              }
+            />
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenEditFicha(false)}>Cancelar</Button>
-              <Button type="submit" className="bg-[#2563EB] text-white">Salvar Ficha</Button>
+              <Button type="submit" className="bg-[#2563EB] text-white" disabled={saving}>
+                {saving ? "Salvando..." : "Salvar Ficha"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

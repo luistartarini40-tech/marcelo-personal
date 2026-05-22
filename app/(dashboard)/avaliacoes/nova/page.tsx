@@ -108,12 +108,13 @@ export default function NovaAvaliacaoPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const aluno = alunos.find((a) => a.id === alunoId)
     if (!aluno) return
 
-    addAvaliacao({
+    try {
+    await addAvaliacao({
       alunoId,
       alunoNome: aluno.nome,
       dataAvaliacao,
@@ -141,6 +142,9 @@ export default function NovaAvaliacaoPage() {
       observacoes,
     })
     router.push("/avaliacoes")
+    } catch {
+      alert("Não foi possível salvar a avaliação.")
+    }
   }
 
   return (

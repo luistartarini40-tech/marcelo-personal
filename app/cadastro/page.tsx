@@ -1,43 +1,37 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
-import { Mail, Lock } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { Mail, Lock, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AuthCard } from "@/components/auth/auth-card"
-import { signInWithEmail } from "@/lib/auth-actions"
+import { signUpWithEmail } from "@/lib/auth-actions"
 
-export default function LoginPage() {
+export default function CadastroPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (searchParams.get("error") === "auth") {
-      setError("Não foi possível entrar. Tente novamente.")
-    }
-    if (searchParams.get("registered") === "true") {
-      setError(null)
-    }
-  }, [searchParams])
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres.")
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      await signInWithEmail(email, password)
-      router.push("/dashboard")
-      router.refresh()
+      await signUpWithEmail(email, password, nome)
+      router.push("/login?registered=true")
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Email ou senha incorretos."
+        err instanceof Error ? err.message : "Não foi possível criar a conta."
       )
     } finally {
       setLoading(false)
@@ -46,20 +40,31 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="Bem-vindo ao Evolução Fit"
-      subtitle="Entre para continuar"
+      title="Criar conta no Evolução Fit"
+      subtitle="Cadastre-se para começar"
     >
-      {searchParams.get("registered") === "true" && (
-        <p className="mb-4 text-sm text-green-600 text-center">
-          Conta criada! Verifique seu email ou entre com sua senha.
-        </p>
-      )}
-
       {error && (
         <p className="mb-4 text-sm text-red-600 text-center">{error}</p>
       )}
 
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleSignUp} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="nome">Nome</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="nome"
+              type="text"
+              placeholder="Seu nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="pl-10 h-11 bg-[#F1F5F9] border-[#E2E8F0]"
+              required
+              disabled={loading}
+            />
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">
@@ -84,11 +89,12 @@ export default function LoginPage() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Mínimo 6 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 h-11 bg-[#F1F5F9] border-[#E2E8F0]"
               required
+              minLength={6}
               disabled={loading}
             />
           </div>
@@ -99,19 +105,16 @@ export default function LoginPage() {
           className="w-full h-11 bg-[#1E293B] hover:bg-[#0F172A] text-white"
           disabled={loading}
         >
-          {loading ? "Entrando..." : "Entrar"}
+          {loading ? "Criando conta..." : "Criar conta"}
         </Button>
       </form>
 
-      <div className="flex justify-between mt-6 text-sm">
-        <Link href="/esqueci-senha" className="text-gray-500 hover:text-gray-700">
-          Esqueceu a senha?
+      <p className="mt-6 text-sm text-center text-gray-500">
+        Já tem uma conta?{" "}
+        <Link href="/login" className="font-semibold text-gray-700 hover:text-gray-900">
+          Entrar
         </Link>
-        <Link href="/cadastro" className="text-gray-500 hover:text-gray-700">
-          Precisa de uma conta?{" "}
-          <span className="font-semibold">Cadastre-se</span>
-        </Link>
-      </div>
+      </p>
     </AuthCard>
   )
 }

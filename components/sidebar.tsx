@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { LayoutDashboard, Users, Dumbbell, ClipboardList, LogOut, Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
+import { signOut } from "@/lib/auth-actions"
 
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -15,10 +17,28 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [userName, setUserName] = useState("Personal")
+  const [userInitial, setUserInitial] = useState("P")
 
-  const handleLogout = () => {
-    window.location.href = "/login"
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      const name =
+        (user.user_metadata?.full_name as string) ||
+        user.email?.split("@")[0] ||
+        "Personal"
+      setUserName(name)
+      setUserInitial(name.charAt(0).toUpperCase())
+    })
+  }, [])
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push("/login")
+    router.refresh()
   }
 
   return (
@@ -61,10 +81,10 @@ export function Sidebar() {
         <div className="px-6 py-8 border-b border-gray-100">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold uppercase text-white ring-1 ring-slate-200">
-              M
+              {userInitial}
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900 text-base">Marcelo</h2>
+              <h2 className="font-semibold text-gray-900 text-base">{userName}</h2>
               <p className="text-sm text-slate-500">Personal Trainer</p>
             </div>
           </div>

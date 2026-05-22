@@ -30,16 +30,25 @@ export default function NovoTreinoPage() {
     observacoes: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const aluno = alunos.find((a) => a.id === formData.alunoId)
     if (!aluno) return
 
-    const newId = addTreino({
-      ...formData,
-      alunoNome: aluno.nome,
-    })
-    router.push(`/treinos/${newId}`)
+    setSaving(true)
+    try {
+      const newId = await addTreino({
+        ...formData,
+        alunoNome: aluno.nome,
+      })
+      router.push(`/treinos/${newId}`)
+    } catch {
+      alert("Não foi possível salvar o programa. Tente novamente.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -167,8 +176,9 @@ export default function NovoTreinoPage() {
               <Button
                 type="submit"
                 className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white"
+                disabled={saving}
               >
-                Salvar Programa
+                {saving ? "Salvando..." : "Salvar Programa"}
               </Button>
             </div>
           </form>
